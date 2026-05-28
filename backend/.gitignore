@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+data/current/*.parquet
+data/history/*.parquet
+data/meta/equipment_status_job_status.json
