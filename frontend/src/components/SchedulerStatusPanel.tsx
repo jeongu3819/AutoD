@@ -1,11 +1,17 @@
-function fmt(ts) {
+import type { JobStatus } from '../types/equipment';
+
+function fmt(ts: string | null | undefined): string {
   if (!ts) return '-';
   const d = new Date(ts);
   if (Number.isNaN(d.getTime())) return ts;
   return d.toLocaleString();
 }
 
-export default function SchedulerStatusPanel({ job }) {
+interface Props {
+  job: JobStatus | null;
+}
+
+export default function SchedulerStatusPanel({ job }: Props) {
   if (!job) return null;
   return (
     <div className="scheduler-panel">

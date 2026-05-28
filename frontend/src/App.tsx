@@ -1,4 +1,4 @@
-import EquipmentStatusPage from './pages/EquipmentStatusPage.jsx';
+import EquipmentStatusPage from './pages/EquipmentStatusPage';
 
 export default function App() {
   return <EquipmentStatusPage />;

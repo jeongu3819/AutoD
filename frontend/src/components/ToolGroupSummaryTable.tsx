@@ -1,8 +1,14 @@
-function RiskBadge({ level }) {
-  return <span className={`risk-badge risk-${level?.toLowerCase()}`}>{level}</span>;
+import type { RiskLevel, ToolGroupSummary } from '../types/equipment';
+
+function RiskBadge({ level }: { level: RiskLevel }) {
+  return <span className={`risk-badge risk-${level.toLowerCase()}`}>{level}</span>;
 }
 
-export default function ToolGroupSummaryTable({ rows }) {
+interface Props {
+  rows?: ToolGroupSummary[] | null;
+}
+
+export default function ToolGroupSummaryTable({ rows }: Props) {
   if (!rows?.length) {
     return <div className="empty-block">설비군별 데이터가 없습니다.</div>;
   }
