@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
+import type { EquipmentStatusItem } from '../types/equipment';
 
-function statusBadgeClass(normalized) {
+function statusBadgeClass(normalized: string): string {
   switch (normalized) {
     case 'RUN':
     case 'BU_DONE':
@@ -24,19 +25,25 @@ function statusBadgeClass(normalized) {
   }
 }
 
-function formatTs(value) {
+function formatTs(value: string | null | undefined): string {
   if (!value) return '-';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
   return d.toLocaleString();
 }
 
-export default function EquipmentStatusTable({ items }) {
-  const [lineFilter, setLineFilter] = useState('ALL');
-  const [groupFilter, setGroupFilter] = useState('ALL');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [availFilter, setAvailFilter] = useState('ALL');
-  const [search, setSearch] = useState('');
+type AvailFilter = 'ALL' | 'AVAIL' | 'UNAVAIL';
+
+interface Props {
+  items: EquipmentStatusItem[];
+}
+
+export default function EquipmentStatusTable({ items }: Props) {
+  const [lineFilter, setLineFilter] = useState<string>('ALL');
+  const [groupFilter, setGroupFilter] = useState<string>('ALL');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [availFilter, setAvailFilter] = useState<AvailFilter>('ALL');
+  const [search, setSearch] = useState<string>('');
 
   const lines = useMemo(
     () => Array.from(new Set(items.map((i) => i.lineid))).sort(),
@@ -99,7 +106,10 @@ export default function EquipmentStatusTable({ items }) {
         </label>
         <label>
           Production
-          <select value={availFilter} onChange={(e) => setAvailFilter(e.target.value)}>
+          <select
+            value={availFilter}
+            onChange={(e) => setAvailFilter(e.target.value as AvailFilter)}
+          >
             <option value="ALL">전체</option>
             <option value="AVAIL">가용</option>
             <option value="UNAVAIL">비가용</option>

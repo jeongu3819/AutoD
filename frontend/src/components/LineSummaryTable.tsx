@@ -1,4 +1,10 @@
-export default function LineSummaryTable({ rows }) {
+import type { LineSummary } from '../types/equipment';
+
+interface Props {
+  rows?: LineSummary[] | null;
+}
+
+export default function LineSummaryTable({ rows }: Props) {
   if (!rows?.length) {
     return <div className="empty-block">라인별 데이터가 없습니다.</div>;
   }

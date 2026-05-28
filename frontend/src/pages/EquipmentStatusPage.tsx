@@ -1,24 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import StatusSummaryCards from '../components/StatusSummaryCards.jsx';
-import LineSummaryTable from '../components/LineSummaryTable.jsx';
-import ToolGroupSummaryTable from '../components/ToolGroupSummaryTable.jsx';
-import EquipmentStatusTable from '../components/EquipmentStatusTable.jsx';
-import RefreshBar from '../components/RefreshBar.jsx';
-import SchedulerStatusPanel from '../components/SchedulerStatusPanel.jsx';
+import StatusSummaryCards from '../components/StatusSummaryCards';
+import LineSummaryTable from '../components/LineSummaryTable';
+import ToolGroupSummaryTable from '../components/ToolGroupSummaryTable';
+import EquipmentStatusTable from '../components/EquipmentStatusTable';
+import RefreshBar from '../components/RefreshBar';
+import SchedulerStatusPanel from '../components/SchedulerStatusPanel';
 import {
   fetchCurrentStatus,
   fetchJobStatus,
   triggerRefreshNow,
-} from '../api/equipmentApi.js';
+} from '../api/equipmentApi';
+import type { EquipmentStatusResponse, JobStatus } from '../types/equipment';
 
 const SCREEN_REFRESH_MS = 30_000;
 
 export default function EquipmentStatusPage() {
-  const [current, setCurrent] = useState(null);
-  const [job, setJob] = useState(null);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const timerRef = useRef(null);
+  const [current, setCurrent] = useState<EquipmentStatusResponse | null>(null);
+  const [job, setJob] = useState<JobStatus | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -28,7 +29,7 @@ export default function EquipmentStatusPage() {
       setCurrent(cur);
       setJob(j);
     } catch (e) {
-      setError(String(e?.message || e));
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
@@ -43,7 +44,7 @@ export default function EquipmentStatusPage() {
       setCurrent(cur);
       setJob(j);
     } catch (e) {
-      setError(String(e?.message || e));
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }

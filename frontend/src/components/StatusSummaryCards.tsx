@@ -1,4 +1,14 @@
-const CARDS = [
+import type { StatusSummary } from '../types/equipment';
+
+type Tone = 'good' | 'bad' | 'warn' | 'warn-soft' | 'work' | 'unknown' | 'neutral';
+
+interface CardSpec {
+  key: keyof StatusSummary;
+  label: string;
+  tone: Tone;
+}
+
+const CARDS: CardSpec[] = [
   { key: 'total', label: '전체 관리 설비', tone: 'neutral' },
   { key: 'available', label: 'Production Available', tone: 'good' },
   { key: 'unavailable', label: 'Unavailable', tone: 'bad' },
@@ -10,7 +20,11 @@ const CARDS = [
   { key: 'unknown', label: 'UNKNOWN', tone: 'unknown' },
 ];
 
-export default function StatusSummaryCards({ summary }) {
+interface Props {
+  summary?: StatusSummary | null;
+}
+
+export default function StatusSummaryCards({ summary }: Props) {
   return (
     <div className="summary-grid">
       {CARDS.map((c) => (

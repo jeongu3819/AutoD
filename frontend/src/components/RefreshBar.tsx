@@ -1,8 +1,17 @@
-function fmt(ts) {
+function fmt(ts: string | null | undefined): string {
   if (!ts) return '-';
   const d = new Date(ts);
   if (Number.isNaN(d.getTime())) return ts;
   return d.toLocaleString();
+}
+
+interface Props {
+  lakeStatusDate: string | null | undefined;
+  platformCollectedTime: string | null | undefined;
+  lastApiResponseTime: string | null | undefined;
+  onManualRefresh: () => void;
+  onForceCollect: () => void;
+  loading: boolean;
 }
 
 export default function RefreshBar({
@@ -12,7 +21,7 @@ export default function RefreshBar({
   onManualRefresh,
   onForceCollect,
   loading,
-}) {
+}: Props) {
   return (
     <div className="refresh-bar">
       <div className="refresh-bar__times">
