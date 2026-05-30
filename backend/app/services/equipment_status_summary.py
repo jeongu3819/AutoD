@@ -83,14 +83,14 @@ def build_line_summary(df: pd.DataFrame) -> list[dict[str, Any]]:
 
 
 def build_tool_group_summary(df: pd.DataFrame) -> list[dict[str, Any]]:
-    if df.empty:
+    if df.empty or "PRC_GROUP" not in df.columns:
         return []
     out: list[dict[str, Any]] = []
-    for tg, group in df.groupby("tool_group", sort=True):
+    for prc, group in df.groupby("PRC_GROUP", sort=True):
         bucket = _bucket_for(group)
         out.append(
             {
-                "tool_group": str(tg),
+                "prc_group": str(prc),
                 "total": bucket["total"],
                 "available": bucket["available"],
                 "unavailable": bucket["unavailable"],

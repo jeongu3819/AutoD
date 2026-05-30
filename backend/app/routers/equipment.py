@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 from fastapi import APIRouter, Query
 
+from app.config import get_settings
 from app.scheduler.equipment_status_scheduler import run_refresh
 from app.schemas.equipment import (
     EquipmentStatusResponse,
@@ -23,7 +25,7 @@ router = APIRouter(prefix="/api/equipment", tags=["equipment"])
 
 
 def _now_iso() -> str:
-    return datetime.utcnow().isoformat()
+    return datetime.now(ZoneInfo(get_settings().APP_TIMEZONE)).isoformat()
 
 
 @router.get("/status/current", response_model=EquipmentStatusResponse)
@@ -51,13 +53,13 @@ def get_current_status() -> EquipmentStatusResponse:
                 "unknown": 0,
             },
             line_summary=[],
-            tool_group_summary=[],
+            prc_group_summary=[],
             items=[],
         )
 
     platform_collected_time = None
     if "platform_collected_time" in df.columns and not df["platform_collected_time"].isna().all():
-        ts = pd.to_datetime(df["platform_collected_time"]).max()
+        ts = pd.to_datetime(df["platform_collected_time"], utc=True).max()
         if pd.notna(ts):
             platform_collected_time = ts.isoformat()
 
@@ -75,7 +77,7 @@ def get_current_status() -> EquipmentStatusResponse:
         last_api_response_time=_now_iso(),
         summary=build_summary(df),  # type: ignore[arg-type]
         line_summary=build_line_summary(df),  # type: ignore[arg-type]
-        tool_group_summary=build_tool_group_summary(df),  # type: ignore[arg-type]
+        prc_group_summary=build_tool_group_summary(df),  # type: ignore[arg-type]
         items=items_from_df(df),  # type: ignore[arg-type]
     )
 

@@ -1,11 +1,11 @@
-import type { RiskLevel, ToolGroupSummary } from '../types/equipment';
+import type { PrcGroupSummary, RiskLevel } from '../types/equipment';
 
 function RiskBadge({ level }: { level: RiskLevel }) {
   return <span className={`risk-badge risk-${level.toLowerCase()}`}>{level}</span>;
 }
 
 interface Props {
-  rows?: ToolGroupSummary[] | null;
+  rows?: PrcGroupSummary[] | null;
 }
 
 export default function ToolGroupSummaryTable({ rows }: Props) {
@@ -16,7 +16,7 @@ export default function ToolGroupSummaryTable({ rows }: Props) {
     <table className="data-table">
       <thead>
         <tr>
-          <th>설비군</th>
+          <th>PRC_GROUP</th>
           <th>전체</th>
           <th>가용</th>
           <th>비가용</th>
@@ -25,8 +25,8 @@ export default function ToolGroupSummaryTable({ rows }: Props) {
       </thead>
       <tbody>
         {rows.map((r) => (
-          <tr key={r.tool_group}>
-            <td>{r.tool_group}</td>
+          <tr key={r.prc_group}>
+            <td>{r.prc_group}</td>
             <td>{r.total}</td>
             <td className="cell-good">{r.available}</td>
             <td className="cell-bad">{r.unavailable}</td>

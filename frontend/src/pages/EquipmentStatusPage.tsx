@@ -91,8 +91,8 @@ export default function EquipmentStatusPage() {
       </section>
 
       <section>
-        <h2>설비군별 요약</h2>
-        <ToolGroupSummaryTable rows={current?.tool_group_summary} />
+        <h2>PRC_GROUP별 요약</h2>
+        <ToolGroupSummaryTable rows={current?.prc_group_summary} />
       </section>
 
       <section>

@@ -21,8 +21,8 @@ class LineSummary(StatusSummary):
     lineid: str
 
 
-class ToolGroupSummary(BaseModel):
-    tool_group: str
+class PrcGroupSummary(BaseModel):
+    prc_group: str
     total: int
     available: int
     unavailable: int
@@ -32,8 +32,16 @@ class ToolGroupSummary(BaseModel):
 class EquipmentStatusItem(BaseModel):
     lineid: str
     eqpid: str
-    eqp_name: str
-    tool_group: str
+    PRC_GROUP: str | None = None
+    FDC_MODEL: str | None = None
+    eqp_model: str | None = None
+    area: str | None = None
+    sdwt: str | None = None
+    chamber_step: str | None = None
+    param_name: str | None = None
+    grade: str | None = None
+    recipe_id: str | None = None
+    unit_name: str | None = None
     status: str | None = None
     pre_status: str | None = None
     status_date: str | None = None
@@ -50,7 +58,7 @@ class EquipmentStatusResponse(BaseModel):
     last_api_response_time: str
     summary: StatusSummary
     line_summary: list[LineSummary] = []
-    tool_group_summary: list[ToolGroupSummary] = []
+    prc_group_summary: list[PrcGroupSummary] = []
     items: list[EquipmentStatusItem] = []
 
 

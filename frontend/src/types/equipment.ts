@@ -30,8 +30,8 @@ export interface LineSummary extends StatusSummary {
   lineid: string;
 }
 
-export interface ToolGroupSummary {
-  tool_group: string;
+export interface PrcGroupSummary {
+  prc_group: string;
   total: number;
   available: number;
   unavailable: number;
@@ -41,8 +41,16 @@ export interface ToolGroupSummary {
 export interface EquipmentStatusItem {
   lineid: string;
   eqpid: string;
-  eqp_name: string;
-  tool_group: string;
+  PRC_GROUP: string | null;
+  FDC_MODEL: string | null;
+  eqp_model: string | null;
+  area: string | null;
+  sdwt: string | null;
+  chamber_step: string | null;
+  param_name: string | null;
+  grade: string | null;
+  recipe_id: string | null;
+  unit_name: string | null;
   status: string | null;
   pre_status: string | null;
   status_date: string | null;
@@ -59,7 +67,7 @@ export interface EquipmentStatusResponse {
   last_api_response_time: string;
   summary: StatusSummary;
   line_summary: LineSummary[];
-  tool_group_summary: ToolGroupSummary[];
+  prc_group_summary: PrcGroupSummary[];
   items: EquipmentStatusItem[];
 }
 

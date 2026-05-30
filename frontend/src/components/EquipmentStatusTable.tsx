@@ -50,7 +50,7 @@ export default function EquipmentStatusTable({ items }: Props) {
     [items],
   );
   const groups = useMemo(
-    () => Array.from(new Set(items.map((i) => i.tool_group))).sort(),
+    () => Array.from(new Set(items.map((i) => i.PRC_GROUP ?? ''))).filter(Boolean).sort(),
     [items],
   );
   const statuses = useMemo(
@@ -61,13 +61,13 @@ export default function EquipmentStatusTable({ items }: Props) {
   const filtered = useMemo(() => {
     return items.filter((i) => {
       if (lineFilter !== 'ALL' && i.lineid !== lineFilter) return false;
-      if (groupFilter !== 'ALL' && i.tool_group !== groupFilter) return false;
+      if (groupFilter !== 'ALL' && i.PRC_GROUP !== groupFilter) return false;
       if (statusFilter !== 'ALL' && i.normalized_status !== statusFilter) return false;
       if (availFilter === 'AVAIL' && !i.production_available) return false;
       if (availFilter === 'UNAVAIL' && i.production_available) return false;
       if (search) {
         const q = search.toLowerCase();
-        const hay = `${i.lineid} ${i.eqpid} ${i.eqp_name} ${i.tool_group}`.toLowerCase();
+        const hay = `${i.lineid} ${i.eqpid} ${i.PRC_GROUP ?? ''} ${i.area ?? ''}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -87,7 +87,7 @@ export default function EquipmentStatusTable({ items }: Props) {
           </select>
         </label>
         <label>
-          설비군
+          PRC_GROUP
           <select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)}>
             <option value="ALL">전체</option>
             {groups.map((g) => (
@@ -121,7 +121,7 @@ export default function EquipmentStatusTable({ items }: Props) {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="라인 / 설비 / 설비군"
+            placeholder="라인 / 설비 / PRC_GROUP"
           />
         </label>
       </div>
@@ -131,7 +131,7 @@ export default function EquipmentStatusTable({ items }: Props) {
           <tr>
             <th>라인</th>
             <th>설비</th>
-            <th>설비군</th>
+            <th>PRC_GROUP</th>
             <th>현재 상태</th>
             <th>이전 상태</th>
             <th>상태 전환</th>
@@ -150,8 +150,8 @@ export default function EquipmentStatusTable({ items }: Props) {
             filtered.map((i) => (
               <tr key={`${i.lineid}-${i.eqpid}`}>
                 <td>{i.lineid}</td>
-                <td>{i.eqp_name || i.eqpid}</td>
-                <td>{i.tool_group}</td>
+                <td>{i.eqpid}</td>
+                <td>{i.PRC_GROUP ?? '-'}</td>
                 <td>{i.status ?? '-'}</td>
                 <td>{i.pre_status ?? '-'}</td>
                 <td className="cell-transition">
