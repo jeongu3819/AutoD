@@ -41,30 +41,39 @@ export interface PrcGroupSummary {
 export interface EquipmentStatusItem {
   lineid: string;
   eqpid: string;
+  // DataLake 상태 컬럼
+  status: string | null;
+  status_date: string | null;
+  pre_status: string | null;
+  backup_date: string | null;
+  first_down_date: string | null;
+  // 정규화/파생 필드
+  normalized_status: NormalizedStatus | string;
+  production_available: boolean;
+  // 관리 설비 메타정보
   PRC_GROUP: string | null;
   FDC_MODEL: string | null;
   eqp_model: string | null;
   area: string | null;
   sdwt: string | null;
-  chamber_step: string | null;
-  param_name: string | null;
-  grade: string | null;
-  recipe_id: string | null;
-  unit_name: string | null;
-  status: string | null;
-  pre_status: string | null;
-  status_date: string | null;
-  normalized_status: NormalizedStatus | string;
-  production_available: boolean;
-  platform_collected_time: string | null;
+  chamber_step: string | string[] | null;
+  param_name: string | string[] | null;
+  grade: string | string[] | null;
+  recipe_id: string | string[] | null;
+  unit_name: string | string[] | null;
+  // 수집 메타정보
+  collect_status: string | null;
+  error_message: string | null;
+  collected_at: string | null;
 }
 
 export interface EquipmentStatusResponse {
   message: string;
   data_source: string;
   lake_status_date: string | null;
-  platform_collected_time: string | null;
+  last_collected_at: string | null;
   last_api_response_time: string;
+  source_file: string | null;
   summary: StatusSummary;
   line_summary: LineSummary[];
   prc_group_summary: PrcGroupSummary[];

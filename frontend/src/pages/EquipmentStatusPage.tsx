@@ -64,6 +64,9 @@ export default function EquipmentStatusPage() {
         <h1>준실시간 설비 상태 모니터링</h1>
         <p className="page-subtitle">
           Lake 기준 최신 상태를 표시합니다. Datalake 적재 주기: 약 10분
+          {current?.source_file && (
+            <span className="source-file"> · {current.source_file}</span>
+          )}
         </p>
       </header>
 
@@ -71,7 +74,7 @@ export default function EquipmentStatusPage() {
 
       <RefreshBar
         lakeStatusDate={current?.lake_status_date}
-        platformCollectedTime={current?.platform_collected_time}
+        lastCollectedAt={current?.last_collected_at}
         lastApiResponseTime={current?.last_api_response_time}
         onManualRefresh={reload}
         onForceCollect={onForceCollect}

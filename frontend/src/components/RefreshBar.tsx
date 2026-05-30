@@ -7,7 +7,7 @@ function fmt(ts: string | null | undefined): string {
 
 interface Props {
   lakeStatusDate: string | null | undefined;
-  platformCollectedTime: string | null | undefined;
+  lastCollectedAt: string | null | undefined;
   lastApiResponseTime: string | null | undefined;
   onManualRefresh: () => void;
   onForceCollect: () => void;
@@ -16,7 +16,7 @@ interface Props {
 
 export default function RefreshBar({
   lakeStatusDate,
-  platformCollectedTime,
+  lastCollectedAt,
   lastApiResponseTime,
   onManualRefresh,
   onForceCollect,
@@ -31,7 +31,7 @@ export default function RefreshBar({
         </div>
         <div>
           <span className="label">플랫폼 수집 시각:</span>
-          <span className="value">{fmt(platformCollectedTime)}</span>
+          <span className="value">{fmt(lastCollectedAt)}</span>
         </div>
         <div>
           <span className="label">화면 갱신 시각:</span>

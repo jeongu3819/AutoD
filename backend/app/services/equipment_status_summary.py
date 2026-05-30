@@ -1,7 +1,7 @@
 """
 Summary builders for the current parquet snapshot.
 
-Phase 1 risk_level rules (tool group):
+Phase 1 risk_level rules (PRC_GROUP):
 - unavailable == 0           -> NORMAL
 - 0 < unavailable < total    -> WARNING
 - available == 0             -> CRITICAL
@@ -102,14 +102,19 @@ def build_tool_group_summary(df: pd.DataFrame) -> list[dict[str, Any]]:
     return out
 
 
+def _serialize(value: Any) -> Any:
+    if isinstance(value, (pd.Timestamp, datetime)):
+        return pd.Timestamp(value).isoformat()
+    if value is pd.NA or (isinstance(value, float) and pd.isna(value)):
+        return None
+    return value
+
+
 def items_from_df(df: pd.DataFrame) -> list[dict[str, Any]]:
     if df.empty:
         return []
     records = df.to_dict(orient="records")
     for r in records:
         for k, v in list(r.items()):
-            if isinstance(v, (pd.Timestamp, datetime)):
-                r[k] = pd.Timestamp(v).isoformat()
-            elif v is pd.NA:
-                r[k] = None
+            r[k] = _serialize(v)
     return records

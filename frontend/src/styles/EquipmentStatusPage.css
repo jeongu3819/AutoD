@@ -16,6 +16,7 @@ body {
 
 .page-header h1 { margin: 0 0 4px; font-size: 24px; }
 .page-subtitle { margin: 0 0 16px; color: #6b7280; font-size: 13px; }
+.source-file { color: #9ca3af; font-size: 12px; }
 
 .error-banner {
   background: #fee2e2;

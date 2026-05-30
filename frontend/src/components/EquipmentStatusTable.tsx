@@ -25,6 +25,12 @@ function statusBadgeClass(normalized: string): string {
   }
 }
 
+function collectBadgeClass(status: string | null): string {
+  if (status === 'SUCCESS') return 'badge badge-good';
+  if (status === 'NO_DATA') return 'badge badge-warn';
+  return 'badge badge-unknown';
+}
+
 function formatTs(value: string | null | undefined): string {
   if (!value) return '-';
   const d = new Date(value);
@@ -81,27 +87,21 @@ export default function EquipmentStatusTable({ items }: Props) {
           라인
           <select value={lineFilter} onChange={(e) => setLineFilter(e.target.value)}>
             <option value="ALL">전체</option>
-            {lines.map((l) => (
-              <option key={l} value={l}>{l}</option>
-            ))}
+            {lines.map((l) => <option key={l} value={l}>{l}</option>)}
           </select>
         </label>
         <label>
           PRC_GROUP
           <select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)}>
             <option value="ALL">전체</option>
-            {groups.map((g) => (
-              <option key={g} value={g}>{g}</option>
-            ))}
+            {groups.map((g) => <option key={g} value={g}>{g}</option>)}
           </select>
         </label>
         <label>
           상태
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="ALL">전체</option>
-            {statuses.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
+            {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </label>
         <label>
@@ -138,13 +138,16 @@ export default function EquipmentStatusTable({ items }: Props) {
             <th>정규화 상태</th>
             <th>Production</th>
             <th>상태 기준 시각</th>
-            <th>플랫폼 수집 시각</th>
+            <th>최초 DOWN 시각</th>
+            <th>백업 시각</th>
+            <th>수집 상태</th>
+            <th>수집 시각</th>
           </tr>
         </thead>
         <tbody>
           {filtered.length === 0 ? (
             <tr>
-              <td colSpan={10} className="empty-cell">조건에 맞는 설비가 없습니다.</td>
+              <td colSpan={13} className="empty-cell">조건에 맞는 설비가 없습니다.</td>
             </tr>
           ) : (
             filtered.map((i) => (
@@ -155,7 +158,7 @@ export default function EquipmentStatusTable({ items }: Props) {
                 <td>{i.status ?? '-'}</td>
                 <td>{i.pre_status ?? '-'}</td>
                 <td className="cell-transition">
-                  {(i.pre_status || '-')} → {(i.status || '-')}
+                  {i.pre_status || '-'} → {i.status || '-'}
                 </td>
                 <td>
                   <span className={statusBadgeClass(i.normalized_status)}>
@@ -170,7 +173,14 @@ export default function EquipmentStatusTable({ items }: Props) {
                   )}
                 </td>
                 <td>{formatTs(i.status_date)}</td>
-                <td>{formatTs(i.platform_collected_time)}</td>
+                <td>{formatTs(i.first_down_date)}</td>
+                <td>{formatTs(i.backup_date)}</td>
+                <td>
+                  <span className={collectBadgeClass(i.collect_status)}>
+                    {i.collect_status ?? '-'}
+                  </span>
+                </td>
+                <td>{formatTs(i.collected_at)}</td>
               </tr>
             ))
           )}

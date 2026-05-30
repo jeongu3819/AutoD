@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     DATALAKE_STATUS_COLUMN: str = "status"
     DATALAKE_STATUS_DATE_COLUMN: str = "status_date"
     DATALAKE_PRE_STATUS_COLUMN: str = "pre_status"
+    DATALAKE_BACKUP_DATE_COLUMN: str = "backup_date"
+    DATALAKE_FIRST_DOWN_DATE_COLUMN: str = "first_down_date"
 
 
 @lru_cache

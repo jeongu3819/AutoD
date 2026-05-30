@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -28,44 +29,42 @@ def _now_iso() -> str:
     return datetime.now(ZoneInfo(get_settings().APP_TIMEZONE)).isoformat()
 
 
+def _max_ts(df: pd.DataFrame, col: str) -> str | None:
+    if col not in df.columns or df[col].isna().all():
+        return None
+    ts = pd.to_datetime(df[col], utc=True, errors="coerce").max()
+    return ts.isoformat() if pd.notna(ts) else None
+
+
 @router.get("/status/current", response_model=EquipmentStatusResponse)
 def get_current_status() -> EquipmentStatusResponse:
     """Return the cached parquet snapshot. Never queries the Datalake."""
     df = read_current_parquet()
     job = read_job_status()
+    source_file = Path(get_settings().EQUIPMENT_STATUS_CURRENT_PATH).name
 
     if df is None or df.empty:
         return EquipmentStatusResponse(
             message="아직 수집된 상태 데이터가 없습니다.",
             data_source="parquet_cache",
             lake_status_date=job.get("last_lake_status_date"),
-            platform_collected_time=job.get("last_success_collect_time"),
+            last_collected_at=job.get("last_success_collect_time"),
             last_api_response_time=_now_iso(),
+            source_file=source_file,
             summary={  # type: ignore[arg-type]
-                "total": 0,
-                "available": 0,
-                "unavailable": 0,
-                "run": 0,
-                "idle": 0,
-                "down": 0,
-                "local": 0,
-                "pm_bu": 0,
-                "unknown": 0,
+                "total": 0, "available": 0, "unavailable": 0,
+                "run": 0, "idle": 0, "down": 0,
+                "local": 0, "pm_bu": 0, "unknown": 0,
             },
             line_summary=[],
             prc_group_summary=[],
             items=[],
         )
 
-    platform_collected_time = None
-    if "platform_collected_time" in df.columns and not df["platform_collected_time"].isna().all():
-        ts = pd.to_datetime(df["platform_collected_time"], utc=True).max()
-        if pd.notna(ts):
-            platform_collected_time = ts.isoformat()
-
+    # status_date는 MySQL naive → 그대로 iso
     lake_status_date = None
     if "status_date" in df.columns and not df["status_date"].isna().all():
-        ts = pd.to_datetime(df["status_date"]).max()
+        ts = pd.to_datetime(df["status_date"], errors="coerce").max()
         if pd.notna(ts):
             lake_status_date = ts.isoformat()
 
@@ -73,8 +72,9 @@ def get_current_status() -> EquipmentStatusResponse:
         message="OK",
         data_source="parquet_cache",
         lake_status_date=lake_status_date,
-        platform_collected_time=platform_collected_time,
+        last_collected_at=_max_ts(df, "collected_at"),
         last_api_response_time=_now_iso(),
+        source_file=source_file,
         summary=build_summary(df),  # type: ignore[arg-type]
         line_summary=build_line_summary(df),  # type: ignore[arg-type]
         prc_group_summary=build_tool_group_summary(df),  # type: ignore[arg-type]

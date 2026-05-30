@@ -32,30 +32,39 @@ class PrcGroupSummary(BaseModel):
 class EquipmentStatusItem(BaseModel):
     lineid: str
     eqpid: str
+    # DataLake 상태 컬럼 (7개)
+    status: str | None = None
+    status_date: str | None = None
+    pre_status: str | None = None
+    backup_date: str | None = None
+    first_down_date: str | None = None
+    # 정규화/파생 필드
+    normalized_status: str
+    production_available: bool
+    # 관리 대상 설비 메타정보 (managed_equipments.py)
     PRC_GROUP: str | None = None
     FDC_MODEL: str | None = None
     eqp_model: str | None = None
     area: str | None = None
     sdwt: str | None = None
-    chamber_step: str | None = None
-    param_name: str | None = None
-    grade: str | None = None
-    recipe_id: str | None = None
-    unit_name: str | None = None
-    status: str | None = None
-    pre_status: str | None = None
-    status_date: str | None = None
-    normalized_status: str
-    production_available: bool
-    platform_collected_time: str | None = None
+    chamber_step: list[str] | str | None = None
+    param_name: list[str] | str | None = None
+    grade: list[str] | str | None = None
+    recipe_id: list[str] | str | None = None
+    unit_name: list[str] | str | None = None
+    # 수집 메타정보
+    collect_status: str | None = None
+    error_message: str | None = None
+    collected_at: str | None = None
 
 
 class EquipmentStatusResponse(BaseModel):
     message: str
     data_source: str
     lake_status_date: str | None = None
-    platform_collected_time: str | None = None
+    last_collected_at: str | None = None
     last_api_response_time: str
+    source_file: str | None = None
     summary: StatusSummary
     line_summary: list[LineSummary] = []
     prc_group_summary: list[PrcGroupSummary] = []

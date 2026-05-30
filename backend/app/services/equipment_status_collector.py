@@ -2,13 +2,16 @@
 Datalake collector for equipment status (Phase 1).
 
 Principles:
-- Never SELECT *. Only select the 5 required columns.
+- Never SELECT *. Only select the 7 required columns.
 - Never rely on LIMIT.
 - Always restrict to managed equipment via whitelists from managed_equipments.py.
 - Two query modes:
   1. get_latest_lake_status_date(): cheap MAX(status_date) probe.
   2. collect_equipment_status_from_lake(): full query, per-equipment latest row,
      run only when latest_status_date has actually changed.
+
+1-Step 조회 컬럼: lineid, eqpid, status, status_date, pre_status, backup_date, first_down_date
+제외 컬럼 (향후): reasoncode, username, eqp_comment, pre_status_date
 """
 
 from __future__ import annotations
@@ -40,7 +43,6 @@ def _kst() -> ZoneInfo:
 def _build_in_clause(prefix: str, values: list[str]) -> tuple[str, dict[str, Any]]:
     """Build a safe `col IN (:p0, :p1, ...)` fragment with bound parameters."""
     if not values:
-        # Always-false guard; we never want to query the whole table.
         return "1 = 0", {}
     keys = [f"{prefix}{i}" for i in range(len(values))]
     placeholders = ", ".join(f":{k}" for k in keys)
@@ -90,16 +92,17 @@ def get_latest_lake_status_date() -> datetime | None:
 
 def _fetch_latest_rows_per_equipment() -> pd.DataFrame:
     """
-    Per-equipment latest row. Targets MySQL 8.0+ via ROW_NUMBER() window function.
+    Per-equipment latest row (MySQL 8.0+ ROW_NUMBER window function).
+    Selects only the 7 required columns for Phase 1.
 
-    Fallback for MySQL 5.7 or older engines without window functions: use
-    _fetch_latest_rows_per_equipment_fallback() and swap the call in
-    collect_equipment_status_from_lake().
+    Fallback for MySQL 5.7: swap call in collect_equipment_status_from_lake()
+    to _fetch_latest_rows_per_equipment_fallback().
     """
     engine = get_engine()
     if engine is None:
         return pd.DataFrame(
-            columns=["lineid", "eqpid", "status", "status_date", "pre_status"]
+            columns=["lineid", "eqpid", "status", "status_date",
+                     "pre_status", "backup_date", "first_down_date"]
         )
 
     cols = get_column_map()
@@ -114,11 +117,13 @@ def _fetch_latest_rows_per_equipment() -> pd.DataFrame:
         f"""
         WITH latest_status AS (
             SELECT
-                {cols['line']}        AS lineid,
-                {cols['eqp_id']}      AS eqpid,
-                {cols['raw_status']}  AS status,
-                {cols['status_date']} AS status_date,
-                {cols['pre_status']}  AS pre_status,
+                {cols['line']}           AS lineid,
+                {cols['eqp_id']}         AS eqpid,
+                {cols['raw_status']}     AS status,
+                {cols['status_date']}    AS status_date,
+                {cols['pre_status']}     AS pre_status,
+                {cols['backup_date']}    AS backup_date,
+                {cols['first_down_date']} AS first_down_date,
                 ROW_NUMBER() OVER (
                     PARTITION BY {cols['line']}, {cols['eqp_id']}
                     ORDER BY {cols['status_date']} DESC
@@ -127,7 +132,8 @@ def _fetch_latest_rows_per_equipment() -> pd.DataFrame:
             WHERE {cols['line']} IN ({line_in})
               AND {cols['eqp_id']} IN ({eqp_in})
         )
-        SELECT lineid, eqpid, status, status_date, pre_status
+        SELECT lineid, eqpid, status, status_date,
+               pre_status, backup_date, first_down_date
         FROM latest_status
         WHERE rn = 1
         """
@@ -142,8 +148,7 @@ def _fetch_latest_rows_per_equipment() -> pd.DataFrame:
 
 def _fetch_latest_rows_per_equipment_fallback() -> pd.DataFrame:
     """
-    MySQL 5.7 / no-window-function fallback.
-    Uses GROUP BY + MAX(status_date) self-join.
+    MySQL 5.7 fallback: GROUP BY + MAX(status_date) self-join.
 
     To use: replace the call in collect_equipment_status_from_lake():
         raw_df = _fetch_latest_rows_per_equipment_fallback()
@@ -151,7 +156,8 @@ def _fetch_latest_rows_per_equipment_fallback() -> pd.DataFrame:
     engine = get_engine()
     if engine is None:
         return pd.DataFrame(
-            columns=["lineid", "eqpid", "status", "status_date", "pre_status"]
+            columns=["lineid", "eqpid", "status", "status_date",
+                     "pre_status", "backup_date", "first_down_date"]
         )
 
     cols = get_column_map()
@@ -167,16 +173,18 @@ def _fetch_latest_rows_per_equipment_fallback() -> pd.DataFrame:
     sql = text(
         f"""
         SELECT
-            t.{cols['line']}        AS lineid,
-            t.{cols['eqp_id']}      AS eqpid,
-            t.{cols['raw_status']}  AS status,
-            t.{cols['status_date']} AS status_date,
-            t.{cols['pre_status']}  AS pre_status
+            t.{cols['line']}            AS lineid,
+            t.{cols['eqp_id']}          AS eqpid,
+            t.{cols['raw_status']}      AS status,
+            t.{cols['status_date']}     AS status_date,
+            t.{cols['pre_status']}      AS pre_status,
+            t.{cols['backup_date']}     AS backup_date,
+            t.{cols['first_down_date']} AS first_down_date
         FROM {table} t
         JOIN (
             SELECT
-                {cols['line']}        AS lineid,
-                {cols['eqp_id']}      AS eqpid,
+                {cols['line']}   AS lineid,
+                {cols['eqp_id']} AS eqpid,
                 MAX({cols['status_date']}) AS max_status_date
             FROM {table}
             WHERE {cols['line']} IN ({line_in_inner})
@@ -191,10 +199,8 @@ def _fetch_latest_rows_per_equipment_fallback() -> pd.DataFrame:
         """
     )
     params = {
-        **line_params_outer,
-        **eqp_params_outer,
-        **line_params_inner,
-        **eqp_params_inner,
+        **line_params_outer, **eqp_params_outer,
+        **line_params_inner, **eqp_params_inner,
     }
 
     with engine.connect() as conn:
@@ -207,15 +213,17 @@ def collect_equipment_status_from_lake() -> pd.DataFrame:
     """
     Full collection path. Returns the dataframe to be persisted to parquet.
 
-    Output columns:
-        lineid, eqpid, PRC_GROUP, FDC_MODEL, eqp_model, area, sdwt,
+    Parquet columns:
+        lineid, eqpid,
+        PRC_GROUP, FDC_MODEL, eqp_model, area, sdwt,
         chamber_step, param_name, grade, recipe_id, unit_name,
-        status, pre_status, status_date,
+        status, status_date, pre_status, backup_date, first_down_date,
         normalized_status, production_available,
-        platform_collected_time
+        collect_status, error_message, collected_at
 
-    Multi-value fields (chamber_step, param_name, grade, recipe_id, unit_name)
-    are stored as comma-joined strings in parquet for compatibility.
+    collect_status: "SUCCESS" | "NO_DATA"
+    error_message : None when SUCCESS
+    collected_at  : KST-aware datetime (stored as UTC in parquet via utc=True)
     """
     raw_df = _fetch_latest_rows_per_equipment()
     eqp_map = get_managed_equipment_map()
@@ -232,9 +240,20 @@ def collect_equipment_status_from_lake() -> pd.DataFrame:
         meta = eqp_map[key]
         raw = raw_indexed.get(key)
 
-        status = raw["status"] if raw is not None else None
-        pre_status = raw["pre_status"] if raw is not None else None
-        status_date = raw["status_date"] if raw is not None else None
+        if raw is not None:
+            status = raw.get("status")
+            pre_status = raw.get("pre_status")
+            status_date = raw.get("status_date")
+            backup_date = raw.get("backup_date")
+            first_down_date = raw.get("first_down_date")
+            collect_status = "SUCCESS"
+            error_message = None
+        else:
+            status = pre_status = status_date = None
+            backup_date = first_down_date = None
+            collect_status = "NO_DATA"
+            error_message = "No data found in Lake for this equipment"
+
         normalized = normalize_status(status)
         available = is_production_available(normalized)
 
@@ -247,23 +266,27 @@ def collect_equipment_status_from_lake() -> pd.DataFrame:
                 "eqp_model": meta.get("eqp_model"),
                 "area": meta.get("area"),
                 "sdwt": meta.get("sdwt"),
-                # Multi-value: stored as comma-joined string in parquet
                 "chamber_step": ",".join(normalize_multi(meta.get("chamber_step"))),
                 "param_name": ",".join(normalize_multi(meta.get("param_name"))),
                 "grade": ",".join(normalize_multi(meta.get("grade"))),
                 "recipe_id": ",".join(normalize_multi(meta.get("recipe_id"))),
                 "unit_name": ",".join(normalize_multi(meta.get("unit_name"))),
                 "status": status,
-                "pre_status": pre_status,
                 "status_date": status_date,
+                "pre_status": pre_status,
+                "backup_date": backup_date,
+                "first_down_date": first_down_date,
                 "normalized_status": normalized,
                 "production_available": available,
-                "platform_collected_time": collected_at,
+                "collect_status": collect_status,
+                "error_message": error_message,
+                "collected_at": collected_at,
             }
         )
 
     df = pd.DataFrame(rows)
-    if "status_date" in df.columns:
-        df["status_date"] = pd.to_datetime(df["status_date"], errors="coerce")
-    df["platform_collected_time"] = pd.to_datetime(df["platform_collected_time"], utc=True)
+    for col in ("status_date", "backup_date", "first_down_date"):
+        if col in df.columns:
+            df[col] = pd.to_datetime(df[col], errors="coerce")
+    df["collected_at"] = pd.to_datetime(df["collected_at"], utc=True)
     return df
